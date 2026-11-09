@@ -17,7 +17,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import br.com.fiap.acessibilidade.model.LocalPublico;
 import br.com.fiap.acessibilidade.model.Usuario;
+import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
+import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
 import br.com.fiap.acessibilidade.repository.UsuarioRepository;
 
 @ActiveProfiles("test")
@@ -33,9 +36,18 @@ class UsuarioIntegrationTests {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private LocalPublicoRepository localPublicoRepository;
+
+    @Autowired
+    private RelatoAcessibilidadeRepository relatoRepository;
+
+    // O H2 é compartilhado entre as classes de teste: apaga primeiro quem tem FK.
     @BeforeEach
     void cleanDatabase() {
+        relatoRepository.deleteAll();
         usuarioRepository.deleteAll();
+        localPublicoRepository.deleteAll();
     }
 
     @Test
@@ -179,6 +191,38 @@ class UsuarioIntegrationTests {
                                 }
                                 """))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deveRetornar409AoExcluirUsuarioComRelato() throws Exception {
+        criarUsuario("Fabio Nunes", "fabio@email.com");
+        Usuario fabio = usuarioRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/locais-publicos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Parada Rua Vergueiro",
+                                  "tipo": "PARADA_ONIBUS",
+                                  "endereco": "Rua Vergueiro, 1000"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+        LocalPublico local = localPublicoRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/relatos-acessibilidade")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"descricao\": \"Rampa de acesso quebrada\", \"categoria\": \"RAMPA\", "
+                                + "\"usuarioId\": " + fabio.getId() + ", \"localId\": " + local.getId() + "}"))
+                .andExpect(status().isCreated());
+
+        // a FK do relato impede a exclusão e o usuário continua cadastrado
+        mockMvc.perform(delete(URL + "/" + fabio.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+
+        mockMvc.perform(get(URL + "/" + fabio.getId()))
+                .andExpect(status().isOk());
     }
 
     private void criarUsuario(String nome, String email) throws Exception {

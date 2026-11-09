@@ -17,7 +17,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import br.com.fiap.acessibilidade.model.LocalPublico;
+import br.com.fiap.acessibilidade.model.Usuario;
 import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
+import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
+import br.com.fiap.acessibilidade.repository.UsuarioRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -32,8 +35,17 @@ class LocalPublicoIntegrationTests {
     @Autowired
     private LocalPublicoRepository localPublicoRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private RelatoAcessibilidadeRepository relatoRepository;
+
+    // O H2 é compartilhado entre as classes de teste: apaga primeiro quem tem FK.
     @BeforeEach
     void cleanDatabase() {
+        relatoRepository.deleteAll();
+        usuarioRepository.deleteAll();
         localPublicoRepository.deleteAll();
     }
 
@@ -158,6 +170,47 @@ class LocalPublicoIntegrationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.latitude").value("A latitude deve estar entre -90 e 90"))
                 .andExpect(jsonPath("$.fields.longitude").value("A longitude deve estar entre -180 e 180"));
+    }
+
+    @Test
+    void deveRetornar409AoExcluirLocalComRelato() throws Exception {
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "UBS Vila Mariana",
+                                  "tipo": "PONTO_ATENDIMENTO",
+                                  "endereco": "Rua Domingos de Morais, 2000"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+        LocalPublico local = localPublicoRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/usuarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Gabriela Reis",
+                                  "email": "gabriela@email.com",
+                                  "tipoPerfil": "CIDADAO"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+        Usuario usuario = usuarioRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/relatos-acessibilidade")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"descricao\": \"Elevador da recepção parado\", \"categoria\": \"ELEVADOR\", "
+                                + "\"usuarioId\": " + usuario.getId() + ", \"localId\": " + local.getId() + "}"))
+                .andExpect(status().isCreated());
+
+        // com relato vinculado o local não sai do banco; a alternativa é o PUT com ativo=false
+        mockMvc.perform(delete(URL + "/" + local.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+
+        mockMvc.perform(get(URL + "/" + local.getId()))
+                .andExpect(status().isOk());
     }
 
     @Test
