@@ -1,6 +1,6 @@
 package br.com.fiap.acessibilidade.dto;
 
-import br.com.fiap.acessibilidade.model.CategoriaRelato;
+import br.com.fiap.acessibilidade.model.enums.CategoriaRelato;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

@@ -2,6 +2,9 @@ package br.com.fiap.acessibilidade.model;
 
 import java.time.LocalDateTime;
 
+import br.com.fiap.acessibilidade.model.enums.CategoriaRelato;
+import br.com.fiap.acessibilidade.model.enums.Prioridade;
+import br.com.fiap.acessibilidade.model.enums.StatusRelato;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

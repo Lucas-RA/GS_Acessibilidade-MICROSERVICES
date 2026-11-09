@@ -1,4 +1,4 @@
-package br.com.fiap.acessibilidade.model;
+package br.com.fiap.acessibilidade.model.enums;
 
 public enum PerfilMobilidade {
     CADEIRA_DE_RODAS,

@@ -2,8 +2,8 @@ package br.com.fiap.acessibilidade.dto;
 
 import java.time.LocalDateTime;
 
-import br.com.fiap.acessibilidade.model.PerfilMobilidade;
-import br.com.fiap.acessibilidade.model.TipoPerfil;
+import br.com.fiap.acessibilidade.model.enums.PerfilMobilidade;
+import br.com.fiap.acessibilidade.model.enums.TipoPerfil;
 import lombok.Data;
 
 @Data

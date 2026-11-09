@@ -1,5 +1,6 @@
 package br.com.fiap.acessibilidade.model;
 
+import br.com.fiap.acessibilidade.model.enums.TipoLocal;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

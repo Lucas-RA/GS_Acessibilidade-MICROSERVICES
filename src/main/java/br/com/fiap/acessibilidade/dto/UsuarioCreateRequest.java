@@ -1,7 +1,7 @@
 package br.com.fiap.acessibilidade.dto;
 
-import br.com.fiap.acessibilidade.model.PerfilMobilidade;
-import br.com.fiap.acessibilidade.model.TipoPerfil;
+import br.com.fiap.acessibilidade.model.enums.PerfilMobilidade;
+import br.com.fiap.acessibilidade.model.enums.TipoPerfil;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

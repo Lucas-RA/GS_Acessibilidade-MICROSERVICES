@@ -2,7 +2,7 @@ package br.com.fiap.acessibilidade.dto;
 
 import java.time.LocalDateTime;
 
-import br.com.fiap.acessibilidade.model.SituacaoValidacao;
+import br.com.fiap.acessibilidade.model.enums.SituacaoValidacao;
 import lombok.Data;
 
 @Data

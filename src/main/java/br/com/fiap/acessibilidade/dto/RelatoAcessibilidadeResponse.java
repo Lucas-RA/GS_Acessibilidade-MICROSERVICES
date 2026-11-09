@@ -2,9 +2,9 @@ package br.com.fiap.acessibilidade.dto;
 
 import java.time.LocalDateTime;
 
-import br.com.fiap.acessibilidade.model.CategoriaRelato;
-import br.com.fiap.acessibilidade.model.Prioridade;
-import br.com.fiap.acessibilidade.model.StatusRelato;
+import br.com.fiap.acessibilidade.model.enums.CategoriaRelato;
+import br.com.fiap.acessibilidade.model.enums.Prioridade;
+import br.com.fiap.acessibilidade.model.enums.StatusRelato;
 import lombok.Data;
 
 @Data

@@ -1,6 +1,6 @@
 package br.com.fiap.acessibilidade.dto;
 
-import br.com.fiap.acessibilidade.model.TipoLocal;
+import br.com.fiap.acessibilidade.model.enums.TipoLocal;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

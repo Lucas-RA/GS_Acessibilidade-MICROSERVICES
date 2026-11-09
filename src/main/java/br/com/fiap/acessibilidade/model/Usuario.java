@@ -2,6 +2,8 @@ package br.com.fiap.acessibilidade.model;
 
 import java.time.LocalDateTime;
 
+import br.com.fiap.acessibilidade.model.enums.PerfilMobilidade;
+import br.com.fiap.acessibilidade.model.enums.TipoPerfil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

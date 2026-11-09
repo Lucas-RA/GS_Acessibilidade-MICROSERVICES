@@ -1,6 +1,6 @@
 package br.com.fiap.acessibilidade.dto;
 
-import br.com.fiap.acessibilidade.model.SituacaoValidacao;
+import br.com.fiap.acessibilidade.model.enums.SituacaoValidacao;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;

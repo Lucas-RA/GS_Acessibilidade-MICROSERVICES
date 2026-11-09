@@ -21,9 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import br.com.fiap.acessibilidade.model.LocalPublico;
 import br.com.fiap.acessibilidade.model.RelatoAcessibilidade;
-import br.com.fiap.acessibilidade.model.TipoLocal;
-import br.com.fiap.acessibilidade.model.TipoPerfil;
 import br.com.fiap.acessibilidade.model.Usuario;
+import br.com.fiap.acessibilidade.model.enums.TipoLocal;
+import br.com.fiap.acessibilidade.model.enums.TipoPerfil;
 import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
 import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
 import br.com.fiap.acessibilidade.repository.UsuarioRepository;
