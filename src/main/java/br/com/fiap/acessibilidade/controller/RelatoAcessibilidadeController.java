@@ -21,8 +21,11 @@ import br.com.fiap.acessibilidade.dto.RelatoAcessibilidadeResponse;
 import br.com.fiap.acessibilidade.dto.RelatoAcessibilidadeUpdateRequest;
 import br.com.fiap.acessibilidade.model.RelatoAcessibilidade;
 import br.com.fiap.acessibilidade.service.RelatoAcessibilidadeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+@Tag(name = "Relatos de acessibilidade", description = "Barreiras de acessibilidade relatadas pelos usuários, com prioridade calculada pela categoria")
 @RestController
 @RequestMapping("api/${api.version}/relatos-acessibilidade")
 public class RelatoAcessibilidadeController {
@@ -33,6 +36,7 @@ public class RelatoAcessibilidadeController {
     @Autowired
     private RelatoAcessibilidadeMapper relatoMapper;
 
+    @Operation(summary = "Registra um relato com status ABERTO e prioridade calculada")
     @PostMapping
     public ResponseEntity<RelatoAcessibilidadeResponse> create(
             @Valid @RequestBody RelatoAcessibilidadeCreateRequest dtoRequest) {
@@ -45,6 +49,7 @@ public class RelatoAcessibilidadeController {
         }
     }
 
+    @Operation(summary = "Busca um relato pelo id")
     @GetMapping("/{id}")
     public ResponseEntity<RelatoAcessibilidadeResponse> findById(@PathVariable Long id) {
         return service
@@ -54,6 +59,7 @@ public class RelatoAcessibilidadeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Lista todos os relatos")
     @GetMapping
     public ResponseEntity<List<RelatoAcessibilidadeResponse>> findAll() {
         return ResponseEntity.ok(service.findAll()
@@ -62,6 +68,7 @@ public class RelatoAcessibilidadeController {
                 .toList());
     }
 
+    @Operation(summary = "Atualiza um relato e recalcula a prioridade")
     @PutMapping("/{id}")
     public ResponseEntity<RelatoAcessibilidadeResponse> update(@PathVariable Long id,
             @Valid @RequestBody RelatoAcessibilidadeUpdateRequest dtoRequest) {
@@ -73,6 +80,7 @@ public class RelatoAcessibilidadeController {
         }
     }
 
+    @Operation(summary = "Exclui um relato sem validações")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         if (service.findById(id).isPresent()) {

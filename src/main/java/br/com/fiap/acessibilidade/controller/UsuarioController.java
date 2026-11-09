@@ -21,8 +21,11 @@ import br.com.fiap.acessibilidade.dto.UsuarioResponse;
 import br.com.fiap.acessibilidade.dto.UsuarioUpdateRequest;
 import br.com.fiap.acessibilidade.model.Usuario;
 import br.com.fiap.acessibilidade.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+@Tag(name = "Usuários", description = "Cadastro de cidadãos e gestores que usam o mapa de acessibilidade")
 @RestController
 @RequestMapping("api/${api.version}/usuarios")
 public class UsuarioController {
@@ -33,12 +36,14 @@ public class UsuarioController {
     @Autowired
     private UsuarioMapper usuarioMapper;
 
+    @Operation(summary = "Cadastra um usuário")
     @PostMapping
     public ResponseEntity<UsuarioResponse> create(@Valid @RequestBody UsuarioCreateRequest dtoRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(usuarioMapper.toDto(service.create(usuarioMapper.toModel(dtoRequest))));
     }
 
+    @Operation(summary = "Busca um usuário pelo id")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> findById(@PathVariable Long id) {
         return service
@@ -48,6 +53,7 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Lista todos os usuários")
     @GetMapping
     public ResponseEntity<List<UsuarioResponse>> findAll() {
         return ResponseEntity.ok(service.findAll()
@@ -56,6 +62,7 @@ public class UsuarioController {
                 .toList());
     }
 
+    @Operation(summary = "Atualiza os dados de um usuário")
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> update(@PathVariable Long id,
             @Valid @RequestBody UsuarioUpdateRequest dtoRequest) {
@@ -67,6 +74,7 @@ public class UsuarioController {
         }
     }
 
+    @Operation(summary = "Exclui um usuário sem relatos ou validações")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         if (service.findById(id).isPresent()) {

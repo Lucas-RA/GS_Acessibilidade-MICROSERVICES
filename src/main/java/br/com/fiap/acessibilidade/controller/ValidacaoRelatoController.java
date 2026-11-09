@@ -21,8 +21,11 @@ import br.com.fiap.acessibilidade.dto.ValidacaoRelatoResponse;
 import br.com.fiap.acessibilidade.dto.ValidacaoRelatoUpdateRequest;
 import br.com.fiap.acessibilidade.model.ValidacaoRelato;
 import br.com.fiap.acessibilidade.service.ValidacaoRelatoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+@Tag(name = "Validações de relato", description = "Confirmações da comunidade de que uma barreira ainda existe ou foi resolvida")
 @RestController
 @RequestMapping("api/${api.version}/validacoes-relato")
 public class ValidacaoRelatoController {
@@ -33,6 +36,7 @@ public class ValidacaoRelatoController {
     @Autowired
     private ValidacaoRelatoMapper validacaoMapper;
 
+    @Operation(summary = "Registra a validação de um usuário para um relato")
     @PostMapping
     public ResponseEntity<ValidacaoRelatoResponse> create(
             @Valid @RequestBody ValidacaoRelatoCreateRequest dtoRequest) {
@@ -45,6 +49,7 @@ public class ValidacaoRelatoController {
         }
     }
 
+    @Operation(summary = "Busca uma validação pelo id")
     @GetMapping("/{id}")
     public ResponseEntity<ValidacaoRelatoResponse> findById(@PathVariable Long id) {
         return service
@@ -54,6 +59,7 @@ public class ValidacaoRelatoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Lista todas as validações")
     @GetMapping
     public ResponseEntity<List<ValidacaoRelatoResponse>> findAll() {
         return ResponseEntity.ok(service.findAll()
@@ -62,6 +68,7 @@ public class ValidacaoRelatoController {
                 .toList());
     }
 
+    @Operation(summary = "Atualiza a situação e o comentário de uma validação")
     @PutMapping("/{id}")
     public ResponseEntity<ValidacaoRelatoResponse> update(@PathVariable Long id,
             @Valid @RequestBody ValidacaoRelatoUpdateRequest dtoRequest) {
@@ -73,6 +80,7 @@ public class ValidacaoRelatoController {
         }
     }
 
+    @Operation(summary = "Exclui uma validação")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         if (service.findById(id).isPresent()) {

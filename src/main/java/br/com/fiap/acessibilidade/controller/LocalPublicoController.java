@@ -21,8 +21,11 @@ import br.com.fiap.acessibilidade.dto.LocalPublicoResponse;
 import br.com.fiap.acessibilidade.dto.LocalPublicoUpdateRequest;
 import br.com.fiap.acessibilidade.model.LocalPublico;
 import br.com.fiap.acessibilidade.service.LocalPublicoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+@Tag(name = "Locais públicos", description = "Pontos de atendimento e paradas de ônibus avaliados pela comunidade")
 @RestController
 @RequestMapping("api/${api.version}/locais-publicos")
 public class LocalPublicoController {
@@ -33,12 +36,14 @@ public class LocalPublicoController {
     @Autowired
     private LocalPublicoMapper localPublicoMapper;
 
+    @Operation(summary = "Cadastra um local público")
     @PostMapping
     public ResponseEntity<LocalPublicoResponse> create(@Valid @RequestBody LocalPublicoCreateRequest dtoRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(localPublicoMapper.toDto(service.create(localPublicoMapper.toModel(dtoRequest))));
     }
 
+    @Operation(summary = "Busca um local público pelo id")
     @GetMapping("/{id}")
     public ResponseEntity<LocalPublicoResponse> findById(@PathVariable Long id) {
         return service
@@ -48,6 +53,7 @@ public class LocalPublicoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Lista todos os locais públicos")
     @GetMapping
     public ResponseEntity<List<LocalPublicoResponse>> findAll() {
         return ResponseEntity.ok(service.findAll()
@@ -56,6 +62,7 @@ public class LocalPublicoController {
                 .toList());
     }
 
+    @Operation(summary = "Atualiza um local público, inclusive para desativá-lo")
     @PutMapping("/{id}")
     public ResponseEntity<LocalPublicoResponse> update(@PathVariable Long id,
             @Valid @RequestBody LocalPublicoUpdateRequest dtoRequest) {
@@ -67,6 +74,7 @@ public class LocalPublicoController {
         }
     }
 
+    @Operation(summary = "Exclui um local público sem relatos")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         if (service.findById(id).isPresent()) {
