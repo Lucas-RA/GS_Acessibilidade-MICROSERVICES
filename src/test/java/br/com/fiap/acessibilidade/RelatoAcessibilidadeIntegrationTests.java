@@ -27,6 +27,7 @@ import br.com.fiap.acessibilidade.model.Usuario;
 import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
 import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
 import br.com.fiap.acessibilidade.repository.UsuarioRepository;
+import br.com.fiap.acessibilidade.repository.ValidacaoRelatoRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -42,6 +43,9 @@ class RelatoAcessibilidadeIntegrationTests {
     private RelatoAcessibilidadeRepository relatoRepository;
 
     @Autowired
+    private ValidacaoRelatoRepository validacaoRepository;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
@@ -53,6 +57,7 @@ class RelatoAcessibilidadeIntegrationTests {
     // O H2 é compartilhado entre as classes de teste: apaga primeiro quem tem FK.
     @BeforeEach
     void prepararBanco() {
+        validacaoRepository.deleteAll();
         relatoRepository.deleteAll();
         usuarioRepository.deleteAll();
         localPublicoRepository.deleteAll();
@@ -234,6 +239,30 @@ class RelatoAcessibilidadeIntegrationTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.status").value("O status é obrigatório (ABERTO, EM_ANALISE ou RESOLVIDO)"));
+    }
+
+    @Test
+    void deveRetornar409AoExcluirRelatoComValidacao() throws Exception {
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(relatoJson("Elevador da plataforma sem funcionar", "ELEVADOR",
+                                usuario.getId(), local.getId())))
+                .andExpect(status().isCreated());
+        RelatoAcessibilidade relato = relatoRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/validacoes-relato")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"situacao\": \"AINDA_EXISTE\", \"relatoId\": " + relato.getId()
+                                + ", \"usuarioId\": " + usuario.getId() + "}"))
+                .andExpect(status().isCreated());
+
+        // as validações precisam ser excluídas antes do relato
+        mockMvc.perform(delete(URL + "/" + relato.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+
+        mockMvc.perform(get(URL + "/" + relato.getId()))
+                .andExpect(status().isOk());
     }
 
     private String relatoJson(String descricao, String categoria, Long usuarioId, Long localId) {

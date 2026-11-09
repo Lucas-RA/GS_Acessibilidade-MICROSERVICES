@@ -21,6 +21,7 @@ import br.com.fiap.acessibilidade.model.Usuario;
 import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
 import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
 import br.com.fiap.acessibilidade.repository.UsuarioRepository;
+import br.com.fiap.acessibilidade.repository.ValidacaoRelatoRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -41,9 +42,13 @@ class LocalPublicoIntegrationTests {
     @Autowired
     private RelatoAcessibilidadeRepository relatoRepository;
 
+    @Autowired
+    private ValidacaoRelatoRepository validacaoRepository;
+
     // O H2 é compartilhado entre as classes de teste: apaga primeiro quem tem FK.
     @BeforeEach
     void cleanDatabase() {
+        validacaoRepository.deleteAll();
         relatoRepository.deleteAll();
         usuarioRepository.deleteAll();
         localPublicoRepository.deleteAll();

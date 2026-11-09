@@ -22,6 +22,7 @@ import br.com.fiap.acessibilidade.model.Usuario;
 import br.com.fiap.acessibilidade.repository.LocalPublicoRepository;
 import br.com.fiap.acessibilidade.repository.RelatoAcessibilidadeRepository;
 import br.com.fiap.acessibilidade.repository.UsuarioRepository;
+import br.com.fiap.acessibilidade.repository.ValidacaoRelatoRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -42,9 +43,13 @@ class UsuarioIntegrationTests {
     @Autowired
     private RelatoAcessibilidadeRepository relatoRepository;
 
+    @Autowired
+    private ValidacaoRelatoRepository validacaoRepository;
+
     // O H2 é compartilhado entre as classes de teste: apaga primeiro quem tem FK.
     @BeforeEach
     void cleanDatabase() {
+        validacaoRepository.deleteAll();
         relatoRepository.deleteAll();
         usuarioRepository.deleteAll();
         localPublicoRepository.deleteAll();
@@ -223,6 +228,53 @@ class UsuarioIntegrationTests {
 
         mockMvc.perform(get(URL + "/" + fabio.getId()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void deveRetornar409AoExcluirUsuarioComValidacao() throws Exception {
+        criarUsuario("Gustavo Alves", "gustavo@email.com");
+        criarUsuario("Heloisa Matos", "heloisa@email.com");
+        Usuario autor = buscarPorEmail("gustavo@email.com");
+        Usuario validador = buscarPorEmail("heloisa@email.com");
+
+        mockMvc.perform(post("/api/v1/locais-publicos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Parada Av. Brigadeiro",
+                                  "tipo": "PARADA_ONIBUS",
+                                  "endereco": "Av. Brigadeiro Luís Antônio, 2000"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+        LocalPublico local = localPublicoRepository.findAll().get(0);
+
+        mockMvc.perform(post("/api/v1/relatos-acessibilidade")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"descricao\": \"Piso tátil solto perto do meio-fio\", \"categoria\": \"PISO_TATIL\", "
+                                + "\"usuarioId\": " + autor.getId() + ", \"localId\": " + local.getId() + "}"))
+                .andExpect(status().isCreated());
+        Long relatoId = relatoRepository.findAll().get(0).getId();
+
+        mockMvc.perform(post("/api/v1/validacoes-relato")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"situacao\": \"AINDA_EXISTE\", \"relatoId\": " + relatoId
+                                + ", \"usuarioId\": " + validador.getId() + "}"))
+                .andExpect(status().isCreated());
+
+        // a validadora não tem relato, mas a validação dela também barra a exclusão
+        mockMvc.perform(delete(URL + "/" + validador.getId()))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(get(URL + "/" + validador.getId()))
+                .andExpect(status().isOk());
+    }
+
+    private Usuario buscarPorEmail(String email) {
+        return usuarioRepository.findAll().stream()
+                .filter(usuario -> usuario.getEmail().equals(email))
+                .findFirst()
+                .get();
     }
 
     private void criarUsuario(String nome, String email) throws Exception {
