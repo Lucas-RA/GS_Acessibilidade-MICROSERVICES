@@ -5,6 +5,7 @@ IF OBJECT_ID('dbo.usuarios', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.usuarios (
         id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        ativo BIT NOT NULL,
         criado_em DATETIME2 NOT NULL,
         email VARCHAR(150) NOT NULL,
         nome VARCHAR(100) NOT NULL,

@@ -53,7 +53,7 @@ Usuario 1──N ValidacaoRelato      N──1 RelatoAcessibilidade
 
 | Tabela | Campos principais |
 |---|---|
-| `usuarios` | nome, e-mail (único), tipo de perfil (`CIDADAO`, `GESTOR`), perfil de mobilidade, data de cadastro |
+| `usuarios` | nome, e-mail (único), tipo de perfil (`CIDADAO`, `GESTOR`), perfil de mobilidade, data de cadastro, ativo |
 | `locais_publicos` | nome, tipo (`PONTO_ATENDIMENTO`, `PARADA_ONIBUS`), endereço, latitude, longitude, ativo |
 | `relatos_acessibilidade` | descrição, categoria, status, prioridade, URL da foto, descrição da foto, data, usuário, local |
 | `validacoes_relato` | situação (`AINDA_EXISTE`, `RESOLVIDO`), comentário, data, relato, usuário |
@@ -72,20 +72,29 @@ O DDL completo para SQL Server está em [database/schema.sql](database/schema.sq
   | `BAIXA` | `ATENDIMENTO`, `OUTRO` | demais situações |
 
 - **Status do relato:** todo relato nasce `ABERTO`. O gestor muda para `EM_ANALISE` ou `RESOLVIDO` pelo `PUT`, que também recalcula a prioridade quando a categoria muda.
-- **Vínculos obrigatórios:** relato e validação só são criados se o usuário, o local e o relato informados existirem. Caso contrário, a resposta é `404`.
+- **Vínculos obrigatórios:** relato e validação só são criados se o usuário, o local e o relato informados existirem e se o usuário estiver ativo. Caso contrário, a resposta é `404`.
 - **Uma validação por pessoa:** cada usuário valida o mesmo relato uma única vez. A segunda tentativa retorna `409`.
 - **Dados preservados no PUT:** a atualização altera só os campos editáveis. A data de criação e os vínculos com usuário, local e relato não mudam.
 - **Texto alternativo da foto:** o relato aceita `descricaoFoto`, a descrição da imagem lida por leitores de tela.
 
+### Exclusão de usuário
+
+Os relatos avisam outras pessoas com deficiência sobre barreiras no caminho, então não podem sumir quando quem os fez sai da plataforma. Por isso o `DELETE /api/v1/usuarios/{id}` não apaga o registro: ele desativa o usuário (`ativo = false`) e anonimiza os dados pessoais, como prevê a LGPD.
+
+- O nome passa a ser "Usuário removido", o e-mail é trocado por um endereço genérico e o perfil de mobilidade é apagado.
+- Os relatos e as validações continuam no mapa, exibindo "Usuário removido" como autor.
+- O e-mail original fica livre para um novo cadastro.
+- O usuário desativado não cria relatos nem validações (`404`) e não pode mais ser editado (`404` no `PUT`).
+- `GET /api/v1/usuarios` lista todos; `/ativos` e `/inativos` filtram pela situação.
+
 ### Exclusão de registros com vínculos
 
-Um registro que tem outros ligados a ele não pode ser excluído, e a API responde `409 Conflict`:
+Nos demais recursos, um registro que tem outros ligados a ele não pode ser excluído, e a API responde `409 Conflict`:
 
-- usuário com relatos ou validações;
 - local público com relatos;
 - relato com validações.
 
-As chaves estrangeiras do banco barram a exclusão. Escolhemos esse caminho em vez da exclusão em cascata para que apagar um cadastro não leve junto os relatos e as validações feitos pela comunidade. Para tirar um local de uso, a alternativa é o `PUT` com `"ativo": false`. Em produção, a exclusão de um usuário seria feita por anonimização dos dados pessoais, como prevê a LGPD, mantendo os relatos que ele fez.
+As chaves estrangeiras do banco barram a exclusão. Escolhemos esse caminho em vez da exclusão em cascata para que apagar um cadastro não leve junto os relatos e as validações feitos pela comunidade. Para tirar um local de uso, a alternativa é o `PUT` com `"ativo": false`.
 
 ## Endpoints
 
@@ -107,6 +116,8 @@ Todos os recursos têm as mesmas operações:
 | `GET` | `/{id}` | `200` | `404` |
 | `PUT` | `/{id}` | `200` | `400`, `404`, `409` |
 | `DELETE` | `/{id}` | `204` | `404`, `409` registro com vínculos |
+
+Usuários têm mais duas rotas: `GET /api/v1/usuarios/ativos` e `GET /api/v1/usuarios/inativos`. No caso deles, o `DELETE` desativa e nunca responde `409`.
 
 ### Exemplos de requisição
 

@@ -23,11 +23,12 @@ public class ValidacaoRelatoService {
     @Autowired
     private UsuarioService usuarioService;
 
-    // Devolve vazio quando o relato ou o usuário não existem; a Controller responde 404.
+    // Devolve vazio quando o relato ou o usuário não existem, ou quando o usuário foi desativado;
+    // a Controller responde 404.
     public Optional<ValidacaoRelato> create(ValidacaoRelato validacao, Long relatoId, Long usuarioId) {
         Optional<RelatoAcessibilidade> relato = relatoService.findById(relatoId);
         Optional<Usuario> usuario = usuarioService.findById(usuarioId);
-        if (relato.isEmpty() || usuario.isEmpty()) {
+        if (relato.isEmpty() || usuario.isEmpty() || !usuario.get().getAtivo()) {
             return Optional.empty();
         }
 

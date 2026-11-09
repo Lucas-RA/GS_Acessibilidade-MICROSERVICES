@@ -38,4 +38,8 @@ public class Usuario {
 
     @Column(nullable = false)
     private LocalDateTime criadoEm;
+
+    // Usuário que pediu exclusão fica inativo e anonimizado; os relatos dele continuam no mapa.
+    @Column(nullable = false)
+    private Boolean ativo = true;
 }

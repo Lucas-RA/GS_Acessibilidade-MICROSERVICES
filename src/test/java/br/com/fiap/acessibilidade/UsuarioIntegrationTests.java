@@ -72,7 +72,8 @@ class UsuarioIntegrationTests {
                 .andExpect(jsonPath("$.email").value("ana.silva@email.com"))
                 .andExpect(jsonPath("$.tipoPerfil").value("CIDADAO"))
                 .andExpect(jsonPath("$.perfilMobilidade").value("CADEIRA_DE_RODAS"))
-                .andExpect(jsonPath("$.criadoEm").exists());
+                .andExpect(jsonPath("$.criadoEm").exists())
+                .andExpect(jsonPath("$.ativo").value(true));
 
         Usuario criado = usuarioRepository.findAll().get(0);
 
@@ -104,11 +105,16 @@ class UsuarioIntegrationTests {
         Usuario atualizado = usuarioRepository.findById(criado.getId()).get();
         assertEquals(criado.getCriadoEm(), atualizado.getCriadoEm());
 
+        // o DELETE desativa e anonimiza: o registro continua, sem os dados pessoais
         mockMvc.perform(delete(URL + "/" + criado.getId()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get(URL + "/" + criado.getId()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ativo").value(false))
+                .andExpect(jsonPath("$.nome").value("Usuário removido"))
+                .andExpect(jsonPath("$.email").value("removido-" + criado.getId() + "@anonimo.local"))
+                .andExpect(jsonPath("$.perfilMobilidade").isEmpty());
     }
 
     @Test
@@ -199,7 +205,7 @@ class UsuarioIntegrationTests {
     }
 
     @Test
-    void deveRetornar409AoExcluirUsuarioComRelato() throws Exception {
+    void deveDesativarUsuarioComRelatoMantendoORelato() throws Exception {
         criarUsuario("Fabio Nunes", "fabio@email.com");
         Usuario fabio = usuarioRepository.findAll().get(0);
 
@@ -221,17 +227,27 @@ class UsuarioIntegrationTests {
                                 + "\"usuarioId\": " + fabio.getId() + ", \"localId\": " + local.getId() + "}"))
                 .andExpect(status().isCreated());
 
-        // a FK do relato impede a exclusão e o usuário continua cadastrado
-        mockMvc.perform(delete(URL + "/" + fabio.getId()))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409));
+        Long relatoId = relatoRepository.findAll().get(0).getId();
 
-        mockMvc.perform(get(URL + "/" + fabio.getId()))
-                .andExpect(status().isOk());
+        // o relato continua no mapa, agora sem o nome de quem fez
+        mockMvc.perform(delete(URL + "/" + fabio.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/relatos-acessibilidade/" + relatoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usuarioId").value(fabio.getId()))
+                .andExpect(jsonPath("$.usuarioNome").value("Usuário removido"));
+
+        // usuário desativado não registra relatos novos
+        mockMvc.perform(post("/api/v1/relatos-acessibilidade")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"descricao\": \"Calçada esburacada na esquina\", \"categoria\": \"CALCADA\", "
+                                + "\"usuarioId\": " + fabio.getId() + ", \"localId\": " + local.getId() + "}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void deveRetornar409AoExcluirUsuarioComValidacao() throws Exception {
+    void deveDesativarUsuarioComValidacao() throws Exception {
         criarUsuario("Gustavo Alves", "gustavo@email.com");
         criarUsuario("Heloisa Matos", "heloisa@email.com");
         Usuario autor = buscarPorEmail("gustavo@email.com");
@@ -262,12 +278,64 @@ class UsuarioIntegrationTests {
                                 + ", \"usuarioId\": " + validador.getId() + "}"))
                 .andExpect(status().isCreated());
 
-        // a validadora não tem relato, mas a validação dela também barra a exclusão
         mockMvc.perform(delete(URL + "/" + validador.getId()))
-                .andExpect(status().isConflict());
+                .andExpect(status().isNoContent());
 
-        mockMvc.perform(get(URL + "/" + validador.getId()))
-                .andExpect(status().isOk());
+        // a validação continua registrada
+        mockMvc.perform(get("/api/v1/validacoes-relato"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].usuarioNome").value("Usuário removido"));
+
+        // usuária desativada não valida outros relatos
+        mockMvc.perform(post("/api/v1/validacoes-relato")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"situacao\": \"RESOLVIDO\", \"relatoId\": " + relatoId
+                                + ", \"usuarioId\": " + validador.getId() + "}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveLiberarEmailEImpedirEdicaoAposDesativar() throws Exception {
+        criarUsuario("Igor Mendes", "igor@email.com");
+        Usuario igor = usuarioRepository.findAll().get(0);
+
+        mockMvc.perform(delete(URL + "/" + igor.getId()))
+                .andExpect(status().isNoContent());
+
+        // o e-mail foi anonimizado, então pode ser usado num cadastro novo
+        criarUsuario("Igor Mendes", "igor@email.com");
+
+        // a conta desativada não volta a ser editada
+        mockMvc.perform(put(URL + "/" + igor.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Igor Mendes\", \"email\": \"igor.mendes@email.com\", \"tipoPerfil\": \"CIDADAO\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveListarUsuariosAtivosEInativos() throws Exception {
+        criarUsuario("Julia Ramos", "julia@email.com");
+        criarUsuario("Kleber Dias", "kleber@email.com");
+        Usuario kleber = buscarPorEmail("kleber@email.com");
+
+        mockMvc.perform(delete(URL + "/" + kleber.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+
+        mockMvc.perform(get(URL + "/ativos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].nome").value("Julia Ramos"));
+
+        mockMvc.perform(get(URL + "/inativos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(kleber.getId()))
+                .andExpect(jsonPath("$[0].ativo").value(false));
     }
 
     private Usuario buscarPorEmail(String email) {

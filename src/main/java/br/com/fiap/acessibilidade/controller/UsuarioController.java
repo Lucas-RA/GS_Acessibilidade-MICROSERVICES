@@ -62,7 +62,25 @@ public class UsuarioController {
                 .toList());
     }
 
-    @Operation(summary = "Atualiza os dados de um usuário")
+    @Operation(summary = "Lista só os usuários ativos")
+    @GetMapping("/ativos")
+    public ResponseEntity<List<UsuarioResponse>> findAtivos() {
+        return ResponseEntity.ok(service.findAtivos()
+                .stream()
+                .map(usuario -> usuarioMapper.toDto(usuario))
+                .toList());
+    }
+
+    @Operation(summary = "Lista só os usuários desativados")
+    @GetMapping("/inativos")
+    public ResponseEntity<List<UsuarioResponse>> findInativos() {
+        return ResponseEntity.ok(service.findInativos()
+                .stream()
+                .map(usuario -> usuarioMapper.toDto(usuario))
+                .toList());
+    }
+
+    @Operation(summary = "Atualiza os dados de um usuário ativo")
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> update(@PathVariable Long id,
             @Valid @RequestBody UsuarioUpdateRequest dtoRequest) {
@@ -74,11 +92,11 @@ public class UsuarioController {
         }
     }
 
-    @Operation(summary = "Exclui um usuário sem relatos ou validações")
+    @Operation(summary = "Desativa o usuário e anonimiza os dados pessoais, mantendo os relatos")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         if (service.findById(id).isPresent()) {
-            service.deleteById(id);
+            service.desativar(id);
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();

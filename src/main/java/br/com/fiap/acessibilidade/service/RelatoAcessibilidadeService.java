@@ -26,11 +26,12 @@ public class RelatoAcessibilidadeService {
     @Autowired
     private LocalPublicoService localPublicoService;
 
-    // Devolve vazio quando o usuário ou o local não existem; a Controller responde 404.
+    // Devolve vazio quando o usuário ou o local não existem, ou quando o usuário foi desativado;
+    // a Controller responde 404.
     public Optional<RelatoAcessibilidade> create(RelatoAcessibilidade relato, Long usuarioId, Long localId) {
         Optional<Usuario> usuario = usuarioService.findById(usuarioId);
         Optional<LocalPublico> local = localPublicoService.findById(localId);
-        if (usuario.isEmpty() || local.isEmpty()) {
+        if (usuario.isEmpty() || !usuario.get().getAtivo() || local.isEmpty()) {
             return Optional.empty();
         }
 

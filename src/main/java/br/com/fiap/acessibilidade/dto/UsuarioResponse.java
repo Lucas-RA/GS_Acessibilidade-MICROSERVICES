@@ -14,4 +14,5 @@ public class UsuarioResponse {
     private TipoPerfil tipoPerfil;
     private PerfilMobilidade perfilMobilidade;
     private LocalDateTime criadoEm;
+    private Boolean ativo;
 }
