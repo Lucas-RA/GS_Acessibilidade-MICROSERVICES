@@ -16,6 +16,10 @@ Projeto da Global Solution 2026 da disciplina Microservice and Web Engineering.
 
 - GitHub: [Lucas-RA/GS_Acessibilidade-MICROSERVICES](https://github.com/Lucas-RA/GS_Acessibilidade-MICROSERVICES)
 - Docker Hub: [270506lu/gs-acessibilidade](https://hub.docker.com/r/270506lu/gs-acessibilidade)
+- API no Azure: [gs-acessibilidade-api.redstone-d958082f.canadacentral.azurecontainerapps.io](https://gs-acessibilidade-api.redstone-d958082f.canadacentral.azurecontainerapps.io/)
+- Swagger: [Swagger UI](https://gs-acessibilidade-api.redstone-d958082f.canadacentral.azurecontainerapps.io/swagger-ui/index.html)
+
+A API roda no Azure Container Apps com banco Azure SQL. O banco usa a oferta gratuita e pausa depois de um tempo sem acesso; a primeira requisição depois disso pode levar alguns segundos enquanto ele é retomado.
 
 ## Tecnologias
 
