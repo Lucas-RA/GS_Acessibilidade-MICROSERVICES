@@ -85,7 +85,7 @@ O DDL completo para SQL Server está em [database/schema.sql](database/schema.sq
 
 Os relatos avisam outras pessoas com deficiência sobre barreiras no caminho, então não podem sumir quando quem os fez sai da plataforma. Por isso o `DELETE /api/v1/usuarios/{id}` não apaga o registro: ele desativa o usuário (`ativo = false`) e anonimiza os dados pessoais, como prevê a LGPD.
 
-- O nome passa a ser "Usuário removido", o e-mail é trocado por um endereço genérico e o perfil de mobilidade é apagado.
+- O nome passa a ser "Usuário removido", o e-mail é trocado por `removido-<id>` (sem "@", então ninguém consegue se cadastrar com ele antes e travar a exclusão) e o perfil de mobilidade é apagado.
 - Os relatos e as validações continuam no mapa, exibindo "Usuário removido" como autor.
 - O e-mail original fica livre para um novo cadastro.
 - O usuário desativado não cria relatos nem validações (`404`) e não pode mais ser editado (`404` no `PUT`).
@@ -223,7 +223,7 @@ Erros de validação (`400`) informam a mensagem de cada campo:
 }
 ```
 
-Conflitos (`409`) usam o mesmo formato, com `fields` nulo. O `404` volta com o corpo vazio.
+JSON malformado ou valor fora das opções de um campo (por exemplo, `"tipoPerfil": "cidadao"` em minúsculas) também respondem `400`, no mesmo formato, com uma mensagem fixa explicando o problema e `fields` nulo. Conflitos (`409`) usam o mesmo formato, com `fields` nulo. O `404` volta com o corpo vazio.
 
 ## Executar localmente
 
@@ -280,11 +280,38 @@ São testes de integração com MockMvc sobre um banco H2 em memória, um arquiv
 
 ## Docker
 
+### Imagem publicada no Docker Hub
+
+A imagem pronta fica em [270506lu/gs-acessibilidade](https://hub.docker.com/r/270506lu/gs-acessibilidade):
+
+```powershell
+docker pull 270506lu/gs-acessibilidade:latest
+```
+
+Cada execução do pipeline publica a mesma imagem com três tags:
+
+| Tag | Exemplo | Significado |
+|---|---|---|
+| `latest` | `latest` | build mais recente da `main` |
+| `v<número da execução>` | `v4` | número da execução do workflow no GitHub Actions |
+| SHA curto do commit | `9810964` | commit exato que gerou a imagem; não muda depois de publicada |
+
+Para rodar a imagem publicada contra o SQL Server local, o host do banco é `host.docker.internal`, porque dentro do container `localhost` aponta para o próprio container:
+
+```powershell
+docker run --rm -p 8080:8080 `
+  -e DB_SERVER_URL=host.docker.internal `
+  -e DB_PWD=$env:DB_PWD `
+  270506lu/gs-acessibilidade:latest
+```
+
+### Build local
+
 ```powershell
 docker build -t gs-acessibilidade:local .
 ```
 
-Para rodar a imagem contra o SQL Server local, o host do banco é `host.docker.internal`, porque dentro do container `localhost` aponta para o próprio container:
+O `docker run` é o mesmo, trocando a imagem por `gs-acessibilidade:local`:
 
 ```powershell
 docker run --rm -p 8080:8080 `
@@ -300,3 +327,5 @@ O workflow [continuous_delivery.yml](.github/workflows/continuous_delivery.yml) 
 1. executa `./mvnw -B clean verify`;
 2. gera as tags `v<número da execução>`, o SHA curto do commit e `latest`;
 3. constrói a imagem e publica em `270506lu/gs-acessibilidade` no Docker Hub.
+
+As execuções ficam na aba [Actions](https://github.com/Lucas-RA/GS_Acessibilidade-MICROSERVICES/actions) do repositório.
