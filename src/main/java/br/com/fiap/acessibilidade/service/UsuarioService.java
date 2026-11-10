@@ -75,7 +75,8 @@ public class UsuarioService {
         if (existente.isPresent()) {
             Usuario usuario = existente.get();
             usuario.setNome("Usuário removido");
-            usuario.setEmail("removido-" + usuario.getId() + "@anonimo.local");
+            // sem "@": o @Email dos DTOs recusa esse valor, então ninguém consegue cadastrá-lo antes
+            usuario.setEmail("removido-" + usuario.getId());
             usuario.setPerfilMobilidade(null);
             usuario.setAtivo(false);
             repository.save(usuario);

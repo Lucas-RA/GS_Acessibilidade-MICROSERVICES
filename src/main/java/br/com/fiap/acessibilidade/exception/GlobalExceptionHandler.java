@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,6 +28,16 @@ public class GlobalExceptionHandler {
         ApiError body = new ApiError(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Dados inválidos", request.getRequestURI());
         body.setFields(fields);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    // JSON malformado ou valor fora das opções de um campo (ex.: "cidadao" em vez de "CIDADAO").
+    // A mensagem é fixa para não expor nomes de classes da aplicação.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleCorpoInvalido(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        ApiError body = new ApiError(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Corpo da requisição inválido: confira o JSON e use, nos campos de opção, um dos valores listados no Swagger, em maiúsculas.",
+                request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 

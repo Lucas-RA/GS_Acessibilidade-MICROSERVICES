@@ -30,6 +30,8 @@ import br.com.fiap.acessibilidade.repository.ValidacaoRelatoRepository;
 class UsuarioIntegrationTests {
 
     private static final String URL = "/api/v1/usuarios";
+    private static final String CORPO_INVALIDO = "Corpo da requisição inválido: confira o JSON e use, nos campos de opção, "
+            + "um dos valores listados no Swagger, em maiúsculas.";
 
     @Autowired
     private MockMvc mockMvc;
@@ -113,7 +115,7 @@ class UsuarioIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ativo").value(false))
                 .andExpect(jsonPath("$.nome").value("Usuário removido"))
-                .andExpect(jsonPath("$.email").value("removido-" + criado.getId() + "@anonimo.local"))
+                .andExpect(jsonPath("$.email").value("removido-" + criado.getId()))
                 .andExpect(jsonPath("$.perfilMobilidade").isEmpty());
     }
 
@@ -311,6 +313,42 @@ class UsuarioIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\": \"Igor Mendes\", \"email\": \"igor.mendes@email.com\", \"tipoPerfil\": \"CIDADAO\"}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void naoDeveAceitarCadastroComOEmailDaAnonimizacao() throws Exception {
+        criarUsuario("Lara Torres", "lara@email.com");
+        Usuario lara = usuarioRepository.findAll().get(0);
+
+        // se alguém ocupasse o e-mail que a anonimização vai usar, o DELETE da Lara daria 409
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Outra Pessoa\", \"email\": \"removido-" + lara.getId()
+                                + "\", \"tipoPerfil\": \"CIDADAO\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.email").value("Informe um e-mail válido"));
+
+        mockMvc.perform(delete(URL + "/" + lara.getId()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveRetornar400ComMensagemParaCorpoInvalido() throws Exception {
+        // valor fora do enum (minúsculas)
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Mario Lopes\", \"email\": \"mario@email.com\", \"tipoPerfil\": \"cidadao\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.path").value(URL))
+                .andExpect(jsonPath("$.message").value(CORPO_INVALIDO));
+
+        // JSON incompleto
+        mockMvc.perform(post(URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Mario Lopes\", \"email\": "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(CORPO_INVALIDO));
     }
 
     @Test
